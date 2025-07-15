@@ -11,9 +11,23 @@ export const generateCareerAdvice = async (userInput: UserInput): Promise<Career
     });
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response.' }));
-        const message = errorData.error || `Request failed with status: ${response.status}`;
-        throw new Error(message);
+        let errorMessage = `Request failed with status: ${response.status}`;
+        
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+        } catch {
+            // If JSON parsing fails, try to get the response as text
+            try {
+                const errorText = await response.text();
+                errorMessage = errorText || errorMessage;
+            } catch {
+                // If both JSON and text parsing fail, use the default message
+                errorMessage = `Request failed with status: ${response.status}`;
+            }
+        }
+        
+        throw new Error(errorMessage);
     }
 
     const data = await response.json();
